@@ -1,18 +1,29 @@
-import * as faceapi from '@vladmandic/face-api';
-
+let faceapi: any = null;
 let modelsLoaded = false;
 let detectionNet: any = null;
+
+async function loadFaceApi() {
+  if (typeof window === 'undefined') {
+    throw new Error('face-api.js can only be used in the browser');
+  }
+  
+  if (!faceapi) {
+    faceapi = await import('@vladmandic/face-api');
+  }
+  return faceapi;
+}
 
 export async function loadFaceRecognitionModels() {
   if (modelsLoaded) return;
 
   try {
+    const api = await loadFaceApi();
     const MODEL_URL = '/models';
     
     await Promise.all([
-      faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
-      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+      api.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+      api.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      api.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
     ]);
 
     modelsLoaded = true;
@@ -28,7 +39,8 @@ export async function detectSingleFace(input: HTMLVideoElement | HTMLImageElemen
     await loadFaceRecognitionModels();
   }
 
-  const detection = await faceapi
+  const api = await loadFaceApi();
+  const detection = await api
     .detectSingleFace(input)
     .withFaceLandmarks()
     .withFaceDescriptor();
@@ -41,7 +53,8 @@ export async function detectAllFaces(input: HTMLVideoElement | HTMLImageElement)
     await loadFaceRecognitionModels();
   }
 
-  const detections = await faceapi
+  const api = await loadFaceApi();
+  const detections = await api
     .detectAllFaces(input)
     .withFaceLandmarks()
     .withFaceDescriptors();
@@ -56,8 +69,9 @@ export function getFaceDescriptor(detection: any): Float32Array | null {
   return detection.descriptor;
 }
 
-export function compareFaceDescriptors(descriptor1: Float32Array, descriptor2: Float32Array): number {
-  const distance = faceapi.euclideanDistance(descriptor1, descriptor2);
+export async function compareFaceDescriptors(descriptor1: Float32Array, descriptor2: Float32Array): Promise<number> {
+  const api = await loadFaceApi();
+  const distance = api.euclideanDistance(descriptor1, descriptor2);
   const similarity = 1 - distance;
   return similarity;
 }

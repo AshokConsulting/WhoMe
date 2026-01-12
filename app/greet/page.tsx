@@ -7,6 +7,8 @@ import { loadFaceRecognitionModels, detectSingleFace, getFaceDescriptor, stringT
 import { ArrowLeft, UserCheck, Users, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default function GreetPage() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
@@ -108,7 +110,7 @@ export default function GreetPage() {
       for (const user of users) {
         try {
           const storedDescriptor = stringToDescriptor(user.faceData);
-          const similarity = compareFaceDescriptors(currentDescriptor, storedDescriptor);
+          const similarity = await compareFaceDescriptors(currentDescriptor, storedDescriptor);
           
           if (similarity > 0.6 && (!bestMatch || similarity > bestMatch.similarity)) {
             bestMatch = { user, similarity };

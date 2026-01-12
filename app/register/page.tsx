@@ -8,6 +8,8 @@ import { loadFaceRecognitionModels, detectSingleFace, getFaceDescriptor, descrip
 import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default function RegisterPage() {
   const router = useRouter();
   const [step, setStep] = useState<'form' | 'camera' | 'success'>('form');

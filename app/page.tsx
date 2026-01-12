@@ -92,38 +92,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-3xl mx-auto">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">How It Works</h3>
-            <div className="grid md:grid-cols-3 gap-6 text-left">
-              <div>
-                <div className="bg-blue-50 rounded-lg p-4 mb-3">
-                  <span className="text-3xl font-bold text-blue-600">1</span>
-                </div>
-                <h4 className="font-semibold text-gray-900 mb-2">Register</h4>
-                <p className="text-gray-600 text-sm">
-                  Capture customer details and face data during registration
-                </p>
-              </div>
-              <div>
-                <div className="bg-green-50 rounded-lg p-4 mb-3">
-                  <span className="text-3xl font-bold text-green-600">2</span>
-                </div>
-                <h4 className="font-semibold text-gray-900 mb-2">Detect</h4>
-                <p className="text-gray-600 text-sm">
-                  AI automatically detects faces when customers enter your store
-                </p>
-              </div>
-              <div>
-                <div className="bg-purple-50 rounded-lg p-4 mb-3">
-                  <span className="text-3xl font-bold text-purple-600">3</span>
-                </div>
-                <h4 className="font-semibold text-gray-900 mb-2">Greet</h4>
-                <p className="text-gray-600 text-sm">
-                  Personalized greetings are displayed for recognized customers
-                </p>
-              </div>
-            </div>
-          </div>
+         
         </div>
       </div>
     </div>

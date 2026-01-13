@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection for customer recognition
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if true;
+      allow delete: if true;
+    }
+    
+    // Menu items collection for POS
+    match /menuItems/{itemId} {
+      allow read: if true;
+      allow write: if true;
+      allow delete: if true;
+    }
+    
+    // Default: deny all other collections
+    match /{document=**} {
+      allow read: if false;
+      allow write: if false;
+    }
+  }
+}

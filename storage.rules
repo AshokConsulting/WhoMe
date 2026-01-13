@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Menu images - anyone can read, authenticated users can write
+    match /menu/{fileName} {
+      allow read: if true;
+      allow write: if true;
+      allow delete: if true;
+    }
+    
+    // Face images for customer recognition
+    match /faces/{fileName} {
+      allow read: if true;
+      allow write: if true;
+      allow delete: if true;
+    }
+    
+    // Test files for diagnostics
+    match /test/{fileName} {
+      allow read: if true;
+      allow write: if true;
+      allow delete: if true;
+    }
+    
+    // Default: deny all other paths
+    match /{allPaths=**} {
+      allow read: if false;
+      allow write: if false;
+    }
+  }
+}

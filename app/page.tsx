@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from "next/link";
-import { UserPlus, Smile, Users as UsersIcon } from "lucide-react";
+import { UserPlus, Smile, Users as UsersIcon, Settings } from "lucide-react";
 import { getAllUsers } from '@/lib/userService';
 
 export default function Home() {
@@ -36,7 +36,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           <Link href="/register">
             <div className="bg-white rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-500">
               <div className="flex flex-col items-center text-center">
@@ -70,6 +70,25 @@ export default function Home() {
                 </p>
                 <div className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold">
                   Start Greeting
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/admin">
+            <div className="bg-white rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-shadow cursor-pointer border-2 border-transparent hover:border-red-500">
+              <div className="flex flex-col items-center text-center">
+                <div className="bg-red-100 p-6 rounded-full mb-6">
+                  <Settings className="w-16 h-16 text-red-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Admin Panel
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Manage McDonald's menu items, prices, and availability
+                </p>
+                <div className="bg-red-600 text-white px-6 py-3 rounded-lg font-semibold">
+                  Manage Menu
                 </div>
               </div>
             </div>

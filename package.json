@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "firebase:deploy": "firebase deploy --only firestore:rules,storage:rules",
+    "firebase:deploy:storage": "firebase deploy --only storage:rules",
+    "firebase:deploy:firestore": "firebase deploy --only firestore:rules"
   },
   "dependencies": {
     "@tensorflow-models/blazeface": "^0.1.0",

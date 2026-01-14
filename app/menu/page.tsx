@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getAllMenuItems, MenuItem } from '@/lib/menuService';
 import { getFrequentlyOrderedItems, createOrder, OrderItem } from '@/lib/orderService';
 import { ShoppingCart, RotateCcw, X, Plus, Minus, User, Home as HomeIcon } from 'lucide-react';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 interface CartItem extends MenuItem {
   quantity: number;
 }
 
-export default function MenuPage() {
+function MenuContent() {
   const searchParams = useSearchParams();
   const userId = searchParams.get('userId');
   const userName = searchParams.get('userName');
@@ -368,5 +370,20 @@ export default function MenuPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MenuPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mb-4"></div>
+          <p className="text-gray-600">Loading menu...</p>
+        </div>
+      </div>
+    }>
+      <MenuContent />
+    </Suspense>
   );
 }

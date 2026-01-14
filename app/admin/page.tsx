@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { MenuItem, getAllMenuItems, deleteMenuItem } from '@/lib/menuService';
-import { Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowLeft, Users } from 'lucide-react';
 import Link from 'next/link';
 import MenuItemForm from '@/components/MenuItemForm';
 import StorageDiagnostic from '@/components/StorageDiagnostic';
@@ -80,17 +80,25 @@ export default function AdminPage() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                McDonald's Menu Management
+                McDonald's Admin Panel
               </h1>
-              <p className="text-gray-600">Manage your menu items, prices, and availability</p>
+              <p className="text-gray-600">Manage menu items, users, and system settings</p>
             </div>
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 shadow-lg"
-            >
-              <Plus className="w-5 h-5" />
-              Add New Item
-            </button>
+            <div className="flex gap-3">
+              <Link href="/admin/users">
+                <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg">
+                  <Users className="w-5 h-5" />
+                  Manage Users
+                </button>
+              </Link>
+              <button
+                onClick={() => setShowForm(true)}
+                className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 shadow-lg"
+              >
+                <Plus className="w-5 h-5" />
+                Add New Item
+              </button>
+            </div>
           </div>
         </div>
 

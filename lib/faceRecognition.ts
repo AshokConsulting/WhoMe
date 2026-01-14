@@ -131,3 +131,63 @@ export function captureFaceSnapshot(video: HTMLVideoElement, detection: any): st
   
   return canvas.toDataURL('image/jpeg', 0.9);
 }
+
+export async function recognizeFace(imageData: string): Promise<{ id: string; name: string; email: string; similarity: number } | null> {
+  try {
+    if (!modelsLoaded) {
+      await loadFaceRecognitionModels();
+    }
+
+    const { getAllUsers } = await import('./userService');
+    const users = await getAllUsers();
+    
+    if (users.length === 0) {
+      return null;
+    }
+
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = imageData;
+    });
+
+    const detection = await detectSingleFace(img);
+    
+    if (!detection) {
+      return null;
+    }
+
+    const currentDescriptor = getFaceDescriptor(detection);
+    if (!currentDescriptor) {
+      return null;
+    }
+
+    let bestMatch: { user: any; similarity: number } | null = null;
+
+    for (const user of users) {
+      if (!user.faceData) continue;
+      
+      const storedDescriptor = stringToDescriptor(user.faceData);
+      const similarity = await compareFaceDescriptors(currentDescriptor, storedDescriptor);
+
+      if (similarity > 0.6 && (!bestMatch || similarity > bestMatch.similarity)) {
+        bestMatch = { user, similarity };
+      }
+    }
+
+    if (bestMatch) {
+      return {
+        id: bestMatch.user.id,
+        name: bestMatch.user.name,
+        email: bestMatch.user.email,
+        similarity: bestMatch.similarity
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error recognizing face:', error);
+    return null;
+  }
+}

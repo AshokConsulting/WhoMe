@@ -1,3 +1,5 @@
+# Firebase in axar.soft.ltd@gmail.com
+
 # WhoMe - Customer Recognition System
 
 An AI-powered SaaS application that helps stores recognize and greet their customers using facial recognition technology. Built with Next.js, Firebase, and TensorFlow.js.
@@ -169,3 +171,12 @@ This project is created for demonstration purposes.
 ## Support
 
 For issues or questions, please check the Firebase console and browser console for error messages.
+
+
+ first screen will scan users face (show the camera with circle to align the face) or ask them to register or skip as a guest
+
+if face is recognised then we will load the users prefences and if not recgonize or first time registeration then we will record the users prefereces
+
+first 2 screens would be like attached for guest user otherwise directly on top show their previous orders and one click to order again  and below their preivous orders show the menus like in 3rd image
+
+app will have

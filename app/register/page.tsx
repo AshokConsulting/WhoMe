@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Camera from '@/components/Camera';
 import { registerUser } from '@/lib/userService';
 import { loadFaceRecognitionModels, detectSingleFace, getFaceDescriptor, descriptorToString, captureFaceSnapshot } from '@/lib/faceRecognition';
@@ -12,6 +12,9 @@ export const dynamic = 'force-dynamic';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const autoCapture = searchParams.get('autoCapture');
+  
   const [step, setStep] = useState<'form' | 'camera' | 'success'>('form');
   const [formData, setFormData] = useState({
     name: '',
@@ -24,13 +27,81 @@ export default function RegisterPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [modelLoaded, setModelLoaded] = useState(false);
+  const [preCapturedFace, setPreCapturedFace] = useState<string>('');
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (autoCapture === 'true') {
+      const capturedFace = localStorage.getItem('capturedFaceImage');
+      if (capturedFace) {
+        setPreCapturedFace(capturedFace);
+        setFaceSnapshot(capturedFace);
+        localStorage.removeItem('capturedFaceImage');
+      }
+    }
+  }, [autoCapture]);
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.name && formData.email && formData.phone) {
-      setStep('camera');
-      setIsCameraActive(true);
-      loadModel();
+      if (preCapturedFace) {
+        await processPreCapturedFace();
+      } else {
+        setStep('camera');
+        setIsCameraActive(true);
+        loadModel();
+      }
+    }
+  };
+
+  const processPreCapturedFace = async () => {
+    setIsProcessing(true);
+    setError('');
+
+    try {
+      await loadFaceRecognitionModels();
+      
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = preCapturedFace;
+      });
+
+      const detection = await detectSingleFace(img);
+      
+      if (!detection) {
+        setError('Could not process captured face. Please try scanning again.');
+        setPreCapturedFace('');
+        setStep('camera');
+        setIsCameraActive(true);
+        setIsProcessing(false);
+        return;
+      }
+
+      const descriptor = getFaceDescriptor(detection);
+      
+      if (!descriptor) {
+        throw new Error('Failed to extract face descriptor');
+      }
+
+      const descriptorString = descriptorToString(descriptor);
+      
+      setFaceData(descriptorString);
+      
+      const result = await registerUser({
+        ...formData,
+        faceData: descriptorString,
+        faceImageUrl: preCapturedFace,
+        profilePhotoUrl: preCapturedFace,
+      });
+
+      router.push(`/menu?userId=${result.id}&userName=${encodeURIComponent(formData.name)}`);
+    } catch (err) {
+      setError('Failed to register user. Please try again.');
+      console.error('Registration error:', err);
+      setPreCapturedFace('');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -74,14 +145,15 @@ export default function RegisterPage() {
       setFaceData(descriptorString);
       setFaceSnapshot(snapshotImage);
       
-      await registerUser({
+      const result = await registerUser({
         ...formData,
         faceData: descriptorString,
         faceImageUrl: snapshotImage,
+        profilePhotoUrl: snapshotImage,
       });
 
       setIsCameraActive(false);
-      setStep('success');
+      router.push(`/menu?userId=${result.id}&userName=${encodeURIComponent(formData.name)}`);
     } catch (err) {
       setError('Failed to register user. Please try again.');
       console.error('Registration error:', err);
@@ -104,6 +176,27 @@ export default function RegisterPage() {
 
           {step === 'form' && (
             <form onSubmit={handleFormSubmit} className="space-y-6">
+              {preCapturedFace && (
+                <div className="bg-green-50 border-2 border-green-500 rounded-lg p-4 mb-6">
+                  <div className="flex items-start gap-4">
+                    <img 
+                      src={preCapturedFace} 
+                      alt="Captured face" 
+                      className="w-24 h-24 rounded-lg object-cover"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <h3 className="font-bold text-green-900">Face Captured!</h3>
+                      </div>
+                      <p className="text-sm text-green-800">
+                        We've captured your face. Just fill in your details below to complete registration.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                   Full Name *

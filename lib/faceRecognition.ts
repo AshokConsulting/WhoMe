@@ -132,27 +132,37 @@ export function captureFaceSnapshot(video: HTMLVideoElement, detection: any): st
   return canvas.toDataURL('image/jpeg', 0.9);
 }
 
-export async function recognizeFace(imageData: string): Promise<{ id: string; name: string; email: string; similarity: number } | null> {
+export async function recognizeFace(
+  videoOrImageData: HTMLVideoElement | string,
+  users?: any[]
+): Promise<any | null> {
   try {
     if (!modelsLoaded) {
       await loadFaceRecognitionModels();
     }
 
-    const { getAllUsers } = await import('./userService');
-    const users = await getAllUsers();
+    let usersToCheck = users;
+    if (!usersToCheck) {
+      const { getAllUsers } = await import('./userService');
+      usersToCheck = await getAllUsers();
+    }
     
-    if (users.length === 0) {
+    if (!usersToCheck || usersToCheck.length === 0) {
       return null;
     }
 
-    const img = new Image();
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = reject;
-      img.src = imageData;
-    });
-
-    const detection = await detectSingleFace(img);
+    let detection;
+    if (videoOrImageData instanceof HTMLVideoElement) {
+      detection = await detectSingleFace(videoOrImageData);
+    } else {
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = videoOrImageData;
+      });
+      detection = await detectSingleFace(img);
+    }
     
     if (!detection) {
       return null;
@@ -165,7 +175,7 @@ export async function recognizeFace(imageData: string): Promise<{ id: string; na
 
     let bestMatch: { user: any; similarity: number } | null = null;
 
-    for (const user of users) {
+    for (const user of usersToCheck) {
       if (!user.faceData) continue;
       
       const storedDescriptor = stringToDescriptor(user.faceData);
@@ -177,12 +187,7 @@ export async function recognizeFace(imageData: string): Promise<{ id: string; na
     }
 
     if (bestMatch) {
-      return {
-        id: bestMatch.user.id,
-        name: bestMatch.user.name,
-        email: bestMatch.user.email,
-        similarity: bestMatch.similarity
-      };
+      return bestMatch.user;
     }
 
     return null;

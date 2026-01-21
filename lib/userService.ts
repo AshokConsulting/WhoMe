@@ -15,15 +15,26 @@ export interface User {
   lastGreeted?: Timestamp;
 }
 
-export async function registerUser(userData: Omit<User, 'id' | 'registeredAt'>) {
+export async function registerUser(userData: Omit<User, 'id' | 'registeredAt'>): Promise<string> {
   try {
+    let faceImageUrl = userData.faceImageUrl;
+
+    if (userData.faceImageUrl && userData.faceImageUrl.startsWith('data:')) {
+      const timestamp = Date.now();
+      const storageRef = ref(storage, `face-images/${timestamp}_${userData.email.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`);
+      await uploadString(storageRef, userData.faceImageUrl, 'data_url');
+      faceImageUrl = await getDownloadURL(storageRef);
+      console.log('Face image uploaded to Firebase Storage:', faceImageUrl);
+    }
+
     const docRef = await addDoc(collection(db, 'users'), {
       ...userData,
-      faceImageUrl: userData.faceData,
+      faceImageUrl,
       registeredAt: Timestamp.now(),
     });
     
-    return { id: docRef.id, ...userData, faceImageUrl: userData.faceData };
+    console.log('User registered with ID:', docRef.id);
+    return docRef.id;
   } catch (error) {
     console.error('Error registering user:', error);
     throw error;

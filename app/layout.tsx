@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WhoMe - Customer Recognition System",
-  description: "AI-powered customer recognition and greeting system for stores",
+  title: "FaceFlow Coffee - AI-Powered Coffee Shop Experience",
+  description: "Face recognition powered coffee ordering system with personalized recommendations and seamless checkout",
 };
 
 export default function RootLayout({

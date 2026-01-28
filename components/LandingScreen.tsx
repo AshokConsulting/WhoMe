@@ -78,7 +78,7 @@ export function LandingScreen({ onSuccess }: LandingScreenProps) {
       setStream(cameraStream);
       console.log('📷 Camera setup complete');
       
-      setStatus('Position your face in the oval');
+      setStatus('Welcome to FaceFlow Coffee! Position your face to get started');
       console.log('🔄 Setting isLoading to false...');
       setIsLoading(false);
       
@@ -210,7 +210,7 @@ export function LandingScreen({ onSuccess }: LandingScreenProps) {
             scanTime: scanTime,
             timestamp: new Date().toISOString()
           });
-          setStatus('Scanning... Position your face in the oval');
+          setStatus('Scanning... Get ready for your perfect coffee experience!');
         }
       } else {
         console.log('⚠️ No users available for recognition');
@@ -240,7 +240,7 @@ export function LandingScreen({ onSuccess }: LandingScreenProps) {
       timerIntervalRef.current = null;
     }
 
-    setStatus('Face not recognized. Registering your face...');
+    setStatus('New face detected! Let\'s get you registered for your coffee orders...');
     setIsProcessing(true);
 
     try {

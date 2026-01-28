@@ -200,12 +200,16 @@ export default function Home() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
               <img 
                 src="/logo.png" 
                 alt="FaceFlow Logo" 
                 className="h-10 w-auto object-contain"
               />
+              <div className="hidden sm:block">
+                <h1 className="text-lg font-semibold text-gray-900">FaceFlow Coffee</h1>
+                <p className="text-xs text-gray-600">Your personalized coffee experience</p>
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex gap-2">
@@ -307,6 +311,14 @@ export default function Home() {
       {activeTab === 'pos' ? (
         <div className="flex h-[calc(100vh-73px)]">
           <div className="flex-1 overflow-y-auto p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Welcome back, {currentUser?.name}! ☕
+              </h2>
+              <p className="text-gray-600">
+                Ready for your favorite coffee? Your personalized recommendations are waiting.
+              </p>
+            </div>
             <ProductGrid onAddToCart={addToCart} />
           </div>
 

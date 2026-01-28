@@ -71,16 +71,30 @@ export default function Home() {
   };
 
   const addToCart = (product: Product) => {
+    if (!product.id) {
+      console.error('Product ID is required to add to cart');
+      return;
+    }
+    
+    const productId: string = product.id; // Type assertion after null check
+    
     setCartItems((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const existing = prev.find((item) => item.id === productId);
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id
+          item.id === productId
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { 
+        id: productId, 
+        name: product.name, 
+        price: product.price, 
+        category: product.category, 
+        image: product.image, 
+        quantity: 1 
+      }];
     });
   };
 
@@ -167,7 +181,14 @@ export default function Home() {
         }
       } else {
         orderMap.set(orderKey, {
-          items: order.items,
+          items: order.items.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            category: 'coffee', // Default category, could be stored with order
+            image: '', // Default image, could be stored with order
+            quantity: item.quantity
+          })),
           frequency: 1,
           lastOrdered: order.timestamp,
         });

@@ -113,19 +113,16 @@ export default function Home() {
   <div className="min-h-screen bg-white flex items-center justify-center p-4">
     <div className="max-w-3xl w-full">
       <div className="text-center mb-8">
-        <img src="/logo.png" alt="Logo" className="h-20 w-auto mx-auto mb-4" />
-        <h1 className="text-5xl font-bold text-gray-500 mb-4">
-          Welcome to Face Flow Coffee
-        </h1>
+        <img src="/logo.png" alt="Logo" className="h-15 w-auto mx-auto mb-4" />
         <p className="text-xl text-gray-800">
-          Position your face in the circle for recognition
+          Position your face in the circle to begin
         </p>
       </div>
 
       <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
         {/* VIDEO AREA */}
         <div className="relative flex justify-center bg-black">
-          <div className="w-full aspect-[9/16] max-w-md">
+          <div className="w-full aspect-[9/16] max-w-sm">
             <video
               ref={videoRef}
               autoPlay
@@ -164,10 +161,6 @@ export default function Home() {
 
         {/* TEXT + BUTTONS */}
         <div className="p-8 space-y-6">
-          <p className="text-center text-gray-600">
-            Center your face in the circle. We'll recognize you automatically!
-          </p>
-
           <div className="flex flex-col md:flex-row gap-4">
             <Link href="/register" className="flex-1">
               <button className="w-full bg-blue-600 text-white py-4 px-6 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-3 font-semibold text-lg shadow-lg">

@@ -41,6 +41,13 @@ function MenuPageContent() {
     loadFrequentItems();
   }, [userId]);
 
+  useEffect(() => {
+    // If user has no frequent items, switch to 'all' category
+    if (!isGuest && userId && frequentItems.length === 0 && !loading) {
+      setSelectedCategory('all');
+    }
+  }, [frequentItems, isGuest, userId, loading]);
+
   const loadMenuItems = async () => {
     try {
       const items = await getAllMenuItems();

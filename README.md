@@ -180,3 +180,14 @@ if face is recognised then we will load the users prefences and if not recgonize
 first 2 screens would be like attached for guest user otherwise directly on top show their previous orders and one click to order again  and below their preivous orders show the menus like in 3rd image
 
 app will have
+
+<img 
+                    src="/face.png" 
+                    alt="Face overlay"
+                    className="w-32 h-32 object-cover opacity-30"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                  <Camera className="w-16 h-16 text-amber-400 opacity-50 absolute" />
+        

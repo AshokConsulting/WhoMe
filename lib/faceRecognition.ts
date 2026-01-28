@@ -17,6 +17,7 @@ export async function loadFaceRecognitionModels() {
   if (modelsLoaded) return;
 
   try {
+    console.log('Loading face recognition models...');
     const api = await loadFaceApi();
     const MODEL_URL = '/models';
     
@@ -30,6 +31,8 @@ export async function loadFaceRecognitionModels() {
     console.log('Face recognition models loaded successfully');
   } catch (error) {
     console.error('Error loading face recognition models:', error);
+    console.error('Model URL attempted:', '/models');
+    console.error('Available files:', navigator.userAgent);
     throw error;
   }
 }
@@ -138,13 +141,6 @@ export async function recognizeFace(imageData: string): Promise<{ id: string; na
       await loadFaceRecognitionModels();
     }
 
-    const { getAllUsers } = await import('./userService');
-    const users = await getAllUsers();
-    
-    if (users.length === 0) {
-      return null;
-    }
-
     const img = new Image();
     await new Promise((resolve, reject) => {
       img.onload = resolve;
@@ -155,11 +151,21 @@ export async function recognizeFace(imageData: string): Promise<{ id: string; na
     const detection = await detectSingleFace(img);
     
     if (!detection) {
+      console.log('No face detected in image');
       return null;
     }
 
     const currentDescriptor = getFaceDescriptor(detection);
     if (!currentDescriptor) {
+      console.log('No face descriptor generated');
+      return null;
+    }
+
+    const { getAllUsers } = await import('./userService');
+    const users = await getAllUsers();
+    
+    if (users.length === 0) {
+      console.log('No users in database - face detected but no users to compare against');
       return null;
     }
 

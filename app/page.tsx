@@ -15,6 +15,7 @@ export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const scanAttemptsRef = useRef(0);
   const MAX_SCAN_ATTEMPTS = 10;
 
   useEffect(() => {
@@ -57,7 +58,10 @@ export default function Home() {
         const canvas = canvasRef.current;
         const video = videoRef.current;
         
-        if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+        if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+          console.log('Video not ready yet');
+          return;
+        }
         
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -68,18 +72,23 @@ export default function Home() {
           const imageData = canvas.toDataURL('image/jpeg');
           
           setRecognizing(true);
-          setScanAttempts(prev => prev + 1);
+          scanAttemptsRef.current += 1;
+          setScanAttempts(scanAttemptsRef.current);
           
           try {
+            console.log(`Recognition attempt ${scanAttemptsRef.current}/${MAX_SCAN_ATTEMPTS}`);
             const result = await recognizeFace(imageData);
             if (result) {
+              console.log('Face recognized successfully:', result);
               setIsScanning(false);
               stopCamera();
               router.push(`/menu?userId=${result.id}&userName=${encodeURIComponent(result.name)}`);
               return;
             }
             
-            if (scanAttempts >= MAX_SCAN_ATTEMPTS) {
+            console.log(`Face not recognized, attempt ${scanAttemptsRef.current}/${MAX_SCAN_ATTEMPTS}`);
+            if (scanAttemptsRef.current >= MAX_SCAN_ATTEMPTS) {
+              console.log('Max attempts reached, redirecting to registration');
               setIsScanning(false);
               stopCamera();
               localStorage.setItem('capturedFaceImage', imageData);

@@ -110,14 +110,14 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-500 to-yellow-500 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">
         <div className="text-center mb-8">
-          <div className="text-yellow-300 text-8xl font-bold mb-4">M</div>
+          <img src="/logo.png" alt="Logo" className="h-20 w-auto mx-auto mb-4" />
           <h1 className="text-5xl font-bold text-white mb-4">
-            Welcome to McDonald's
+            Welcome to Coffee Shop POS
           </h1>
-          <p className="text-xl text-yellow-100">
+          <p className="text-xl text-blue-100">
             Position your face in the circle for recognition
           </p>
         </div>
@@ -135,24 +135,24 @@ export default function Home() {
             
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="relative">
-                <div className="w-80 h-80 border-4 border-yellow-400 rounded-full animate-pulse"></div>
+                <div className="w-80 h-80 border-4 border-blue-400 rounded-full animate-pulse"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Camera className="w-16 h-16 text-yellow-400 opacity-50" />
+                  <Camera className="w-16 h-16 text-blue-400 opacity-50" />
                 </div>
               </div>
             </div>
 
             {recognizing && (
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-red-900 px-6 py-3 rounded-full font-bold shadow-lg">
+              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-400 text-white px-6 py-3 rounded-full font-bold shadow-lg">
                 <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-900"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   Recognizing... ({scanAttempts}/{MAX_SCAN_ATTEMPTS})
                 </div>
               </div>
             )}
             
             {scanAttempts > 5 && scanAttempts < MAX_SCAN_ATTEMPTS && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-orange-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
                 Not recognized? We'll help you register in {MAX_SCAN_ATTEMPTS - scanAttempts} seconds...
               </div>
             )}
@@ -177,12 +177,6 @@ export default function Home() {
               <Users className="w-6 h-6" />
               Continue as Guest
             </button>
-
-            {/* <Link href="/admin">
-              <button className="w-full bg-red-600 text-white py-3 px-6 rounded-xl hover:bg-red-700 transition-colors font-semibold shadow-lg">
-                Admin Panel
-              </button>
-            </Link> */}
           </div>
         </div>
       </div>

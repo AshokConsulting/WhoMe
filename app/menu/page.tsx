@@ -28,7 +28,7 @@ export default function MenuPage() {
   const [showPastOrders, setShowPastOrders] = useState(true);
 
   const categories = [
-    { id: 'past-orders', name: 'Past Orders', icon: RotateCcw },
+    { id: 'past-orders', name: 'Reorder', icon: RotateCcw },
     { id: 'all', name: 'All Items', icon: Coffee },
     { id: 'coffee', name: 'Coffee', icon: Coffee },
     { id: 'pastry', name: 'Pastries', icon: Cake },

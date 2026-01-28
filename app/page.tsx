@@ -1,182 +1,339 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { Camera, UserPlus, Users } from "lucide-react";
-import { recognizeFace } from '@/lib/faceRecognition';
+import { useState, useEffect } from 'react';
+import { ProductGrid } from '@/components/ProductGrid';
+import { Cart, CartItem } from '@/components/Cart';
+import { OrderHistory, Order } from '@/components/OrderHistory';
+import { PaymentModal } from '@/components/PaymentModal';
+import { LandingScreen } from '@/components/LandingScreen';
+import { PastOrders } from '@/components/PastOrders';
+import { RecommendedOrders } from '@/components/RecommendedOrders';
+import { User } from 'lucide-react';
+import type { User as FaceUser } from '@/lib/userService';
+import { Product } from '@/components/ProductGrid';
 import Link from 'next/link';
 
+interface UserProfile {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  faceImageUrl?: string;
+}
+
 export default function Home() {
-  const router = useRouter();
-  const [isScanning, setIsScanning] = useState(true);
-  const [recognizing, setRecognizing] = useState(false);
-  const [scanAttempts, setScanAttempts] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const MAX_SCAN_ATTEMPTS = 10;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [showPayment, setShowPayment] = useState(false);
+  const [activeTab, setActiveTab] = useState<'pos' | 'history'>('pos');
+  const [showPastOrders, setShowPastOrders] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(true);
 
   useEffect(() => {
-    startCamera();
+    const savedUser = localStorage.getItem('currentUser');
+    const savedOrders = localStorage.getItem('orders');
     
-    return () => {
-      stopCamera();
-    };
+    if (savedUser) {
+      const user = JSON.parse(savedUser);
+      setCurrentUser(user);
+      setIsAuthenticated(true);
+    }
+    
+    if (savedOrders) {
+      const parsedOrders = JSON.parse(savedOrders).map((order: any) => ({
+        ...order,
+        timestamp: new Date(order.timestamp),
+      }));
+      setOrders(parsedOrders);
+    }
   }, []);
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user', width: 1280, height: 720 } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        startFaceRecognition();
+  useEffect(() => {
+    if (orders.length > 0) {
+      localStorage.setItem('orders', JSON.stringify(orders));
+    }
+  }, [orders]);
+
+  const handleFaceLoginSuccess = (user: FaceUser) => {
+    const userProfile: UserProfile = {
+      id: user.id || '',
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      faceImageUrl: user.faceImageUrl,
+    };
+    setCurrentUser(userProfile);
+    localStorage.setItem('currentUser', JSON.stringify(userProfile));
+    setIsAuthenticated(true);
+  };
+
+  const addToCart = (product: Product) => {
+    setCartItems((prev) => {
+      const existing = prev.find((item) => item.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
       }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      alert('Unable to access camera. Please allow camera permissions.');
+      return [...prev, { ...product, quantity: 1 }];
+    });
+  };
+
+  const updateQuantity = (id: string, quantity: number) => {
+    if (quantity <= 0) {
+      setCartItems((prev) => prev.filter((item) => item.id !== id));
+    } else {
+      setCartItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+      );
     }
   };
 
-  const stopCamera = () => {
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current);
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+  const removeFromCart = (id: string) => {
+    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const getTotal = () => {
+    return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  };
+
+  const handleCheckout = () => {
+    if (cartItems.length > 0) {
+      setShowPayment(true);
     }
   };
 
-  const startFaceRecognition = () => {
-    scanIntervalRef.current = setInterval(async () => {
-      if (videoRef.current && canvasRef.current && isScanning && !recognizing) {
-        const canvas = canvasRef.current;
-        const video = videoRef.current;
-        
-        if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
-        
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(video, 0, 0);
-          const imageData = canvas.toDataURL('image/jpeg');
-          
-          setRecognizing(true);
-          setScanAttempts(prev => prev + 1);
-          
-          try {
-            const result = await recognizeFace(imageData);
-            if (result) {
-              setIsScanning(false);
-              stopCamera();
-              router.push(`/menu?userId=${result.id}&userName=${encodeURIComponent(result.name)}`);
-              return;
-            }
-            
-            if (scanAttempts >= MAX_SCAN_ATTEMPTS) {
-              setIsScanning(false);
-              stopCamera();
-              localStorage.setItem('capturedFaceImage', imageData);
-              router.push('/register?autoCapture=true');
-            }
-          } catch (error) {
-            console.error('Recognition error:', error);
-          } finally {
-            setRecognizing(false);
-          }
+  const completeOrder = (paymentMethod: string) => {
+    const newOrder: Order = {
+      id: `ORD-${Date.now()}`,
+      items: [...cartItems],
+      total: getTotal(),
+      timestamp: new Date(),
+      paymentMethod,
+      userId: currentUser?.id,
+    };
+    setOrders((prev) => [newOrder, ...prev]);
+    setCartItems([]);
+    setShowPayment(false);
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
+  };
+
+  const handleReorder = (items: CartItem[]) => {
+    setCartItems(items);
+    setShowPastOrders(false);
+    setActiveTab('pos');
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('currentUser');
+    setIsAuthenticated(false);
+    setCartItems([]);
+    setShowPastOrders(false);
+    setShowRecommendations(true);
+    setShowUserDropdown(false);
+    setShowPayment(false);
+    setActiveTab('pos');
+  };
+
+  const userOrders = currentUser
+    ? orders.filter((order) => order.userId === currentUser.id)
+    : orders;
+
+  const getRecommendedOrders = () => {
+    if (!currentUser || userOrders.length === 0) return [];
+
+    const orderMap = new Map<string, { items: CartItem[]; frequency: number; lastOrdered: Date }>();
+
+    userOrders.forEach((order) => {
+      const orderKey = order.items
+        .map((item) => `${item.id}-${item.quantity}`)
+        .sort()
+        .join('|');
+
+      if (orderMap.has(orderKey)) {
+        const existing = orderMap.get(orderKey)!;
+        existing.frequency += 1;
+        if (order.timestamp > existing.lastOrdered) {
+          existing.lastOrdered = order.timestamp;
         }
+      } else {
+        orderMap.set(orderKey, {
+          items: order.items,
+          frequency: 1,
+          lastOrdered: order.timestamp,
+        });
       }
-    }, 2000);
+    });
+
+    return Array.from(orderMap.values())
+      .filter((rec) => rec.frequency >= 2)
+      .sort((a, b) => b.frequency - a.frequency)
+      .slice(0, 3);
   };
 
-  const handleContinueAsGuest = () => {
-    stopCamera();
-    router.push('/menu');
+  const recommendedOrders = getRecommendedOrders();
+
+  const handleSelectRecommendedOrder = (items: CartItem[]) => {
+    setCartItems(items);
+    setShowRecommendations(false);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <LandingScreen
+        onSuccess={handleFaceLoginSuccess}
+      />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-500 to-yellow-500 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full">
-        <div className="text-center mb-8">
-          <div className="text-yellow-300 text-8xl font-bold mb-4">M</div>
-          <h1 className="text-5xl font-bold text-white mb-4">
-            Welcome to McDonald's
-          </h1>
-          <p className="text-xl text-yellow-100">
-            Position your face in the circle for recognition
-          </p>
-        </div>
-
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          <div className="relative">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="w-full"
-              style={{ maxHeight: '500px', objectFit: 'cover' }}
-            />
-            <canvas ref={canvasRef} className="hidden" />
-            
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="relative">
-                <div className="w-80 h-80 border-4 border-yellow-400 rounded-full animate-pulse"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Camera className="w-16 h-16 text-yellow-400 opacity-50" />
-                </div>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <img 
+                src="/logo.png" 
+                alt="FaceFlow Logo" 
+                className="h-10 w-auto object-contain"
+              />
             </div>
-
-            {recognizing && (
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-red-900 px-6 py-3 rounded-full font-bold shadow-lg">
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-900"></div>
-                  Recognizing... ({scanAttempts}/{MAX_SCAN_ATTEMPTS})
+            <div className="flex items-center gap-4">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setActiveTab('pos')}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    activeTab === 'pos'
+                      ? 'bg-amber-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Order
+                </button>
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    activeTab === 'history'
+                      ? 'bg-amber-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Order History
+                </button>
+                <Link href="/manage">
+                  <button className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                    Manage Items
+                  </button>
+                </Link>
+                <Link href="/admin">
+                  <button className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors">
+                    Admin
+                  </button>
+                </Link>
+              </div>
+              {currentUser && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                    className="w-12 h-12 rounded-full overflow-hidden border-2 border-amber-500 hover:border-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                  >
+                    {currentUser.faceImageUrl ? (
+                      <img 
+                        src={currentUser.faceImageUrl} 
+                        alt={currentUser.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-amber-100 flex items-center justify-center">
+                        <User className="w-6 h-6 text-amber-600" />
+                      </div>
+                    )}
+                  </button>
+                  {showUserDropdown && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-10" 
+                        onClick={() => setShowUserDropdown(false)}
+                      />
+                      <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                        <div className="px-4 py-3 border-b border-gray-200">
+                          <p className="text-sm font-medium text-gray-900">{currentUser.name}</p>
+                          <p className="text-xs text-gray-600">{currentUser.email}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setShowUserDropdown(false);
+                            handleLogout();
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </div>
-            )}
-            
-            {scanAttempts > 5 && scanAttempts < MAX_SCAN_ATTEMPTS && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
-                Not recognized? We'll help you register in {MAX_SCAN_ATTEMPTS - scanAttempts} seconds...
-              </div>
-            )}
-          </div>
-
-          <div className="p-8 space-y-10">
-            <p className="text-center text-gray-600 mb-6">
-              Center your face in the circle. We'll recognize you automatically!
-            </p>
-
-            <Link href="/register">
-              <button className="w-full bg-blue-600 text-white py-4 px-6 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-3 font-semibold text-lg shadow-lg">
-                <UserPlus className="w-6 h-6" />
-                Register Now
-              </button>
-            </Link>
-
-            <button
-              onClick={handleContinueAsGuest}
-              className="w-full bg-gray-600 text-white py-4 px-6 rounded-xl hover:bg-gray-700 transition-colors flex items-center justify-center gap-3 font-semibold text-lg shadow-lg"
-            >
-              <Users className="w-6 h-6" />
-              Continue as Guest
-            </button>
-
-            {/* <Link href="/admin">
-              <button className="w-full bg-red-600 text-white py-3 px-6 rounded-xl hover:bg-red-700 transition-colors font-semibold shadow-lg">
-                Admin Panel
-              </button>
-            </Link> */}
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </header>
+
+      {currentUser && showRecommendations && recommendedOrders.length > 0 && activeTab === 'pos' && (
+        <RecommendedOrders
+          recommendations={recommendedOrders}
+          onSelectOrder={handleSelectRecommendedOrder}
+          onClose={() => setShowRecommendations(false)}
+        />
+      )}
+
+      {currentUser && showPastOrders && userOrders.length > 0 && activeTab === 'pos' && (
+        <PastOrders
+          orders={userOrders}
+          onReorder={handleReorder}
+          onClose={() => setShowPastOrders(false)}
+        />
+      )}
+
+      {activeTab === 'pos' ? (
+        <div className="flex h-[calc(100vh-73px)]">
+          <div className="flex-1 overflow-y-auto p-6">
+            <ProductGrid onAddToCart={addToCart} />
+          </div>
+
+          <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
+            <Cart
+              items={cartItems}
+              onUpdateQuantity={updateQuantity}
+              onRemoveItem={removeFromCart}
+              onCheckout={handleCheckout}
+              onClear={clearCart}
+              total={getTotal()}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="p-6">
+          <OrderHistory orders={currentUser ? userOrders : orders} />
+        </div>
+      )}
+
+      {showPayment && (
+        <PaymentModal
+          total={getTotal()}
+          onComplete={completeOrder}
+          onCancel={() => setShowPayment(false)}
+        />
+      )}
     </div>
   );
 }

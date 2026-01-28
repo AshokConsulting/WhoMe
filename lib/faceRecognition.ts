@@ -132,67 +132,86 @@ export function captureFaceSnapshot(video: HTMLVideoElement, detection: any): st
   return canvas.toDataURL('image/jpeg', 0.9);
 }
 
-export async function recognizeFace(
+export const recognizeFace = async (
   videoOrImageData: HTMLVideoElement | string,
   users?: any[]
-): Promise<any | null> {
-  try {
-    if (!modelsLoaded) {
-      await loadFaceRecognitionModels();
-    }
+): Promise<any | null> => {
+  console.log('🎯 Starting face recognition process...');
+  
+  if (!modelsLoaded) {
+    console.log('📦 Loading face recognition models...');
+    await loadFaceRecognitionModels();
+    console.log('✅ Models loaded successfully');
+  }
 
-    let usersToCheck = users;
-    if (!usersToCheck) {
-      const { getAllUsers } = await import('./userService');
-      usersToCheck = await getAllUsers();
-    }
-    
-    if (!usersToCheck || usersToCheck.length === 0) {
-      return null;
-    }
-
-    let detection;
-    if (videoOrImageData instanceof HTMLVideoElement) {
-      detection = await detectSingleFace(videoOrImageData);
-    } else {
-      const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = videoOrImageData;
-      });
-      detection = await detectSingleFace(img);
-    }
-    
-    if (!detection) {
-      return null;
-    }
-
-    const currentDescriptor = getFaceDescriptor(detection);
-    if (!currentDescriptor) {
-      return null;
-    }
-
-    let bestMatch: { user: any; similarity: number } | null = null;
-
-    for (const user of usersToCheck) {
-      if (!user.faceData) continue;
-      
-      const storedDescriptor = stringToDescriptor(user.faceData);
-      const similarity = await compareFaceDescriptors(currentDescriptor, storedDescriptor);
-
-      if (similarity > 0.6 && (!bestMatch || similarity > bestMatch.similarity)) {
-        bestMatch = { user, similarity };
-      }
-    }
-
-    if (bestMatch) {
-      return bestMatch.user;
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error recognizing face:', error);
+  let usersToCheck = users;
+  if (!usersToCheck) {
+    console.log('👥 Fetching all users from database...');
+    const { getAllUsers } = await import('./userService');
+    usersToCheck = await getAllUsers();
+  }
+  
+  if (!usersToCheck || usersToCheck.length === 0) {
+    console.log('❌ No users available for recognition');
     return null;
   }
-}
+
+  console.log(`🔍 Checking against ${usersToCheck.length} registered users`);
+
+  let detection;
+  if (videoOrImageData instanceof HTMLVideoElement) {
+    console.log('📹 Detecting face in video stream...');
+    detection = await detectSingleFace(videoOrImageData);
+  } else {
+    console.log('🖼️ Detecting face in image data...');
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = videoOrImageData;
+    });
+    detection = await detectSingleFace(img);
+  }
+  
+  if (!detection) {
+    console.log('❌ No face detected in the input');
+    return null;
+  }
+
+  console.log('✅ Face detected successfully');
+
+  const currentDescriptor = getFaceDescriptor(detection);
+  if (!currentDescriptor) {
+    console.log('❌ Could not extract face descriptor from detected face');
+    return null;
+  }
+
+  console.log('🔢 Face descriptor extracted successfully');
+
+  let bestMatch: { user: any; similarity: number } | null = null;
+
+  for (const user of usersToCheck) {
+    if (!user.faceData) {
+      console.log(`⚠️ User ${user.name} (${user.id}) has no face data, skipping`);
+      continue;
+    }
+    
+    const storedDescriptor = stringToDescriptor(user.faceData);
+    const similarity = await compareFaceDescriptors(currentDescriptor, storedDescriptor);
+
+    console.log(`👤 Comparing with ${user.name}: similarity = ${similarity.toFixed(3)}`);
+
+    if (similarity > 0.6 && (!bestMatch || similarity > bestMatch.similarity)) {
+      bestMatch = { user, similarity };
+      console.log(`🎯 New best match: ${user.name} with similarity ${similarity.toFixed(3)}`);
+    }
+  }
+
+  if (bestMatch) {
+    console.log(`✅ FACE RECOGNIZED: ${bestMatch.user.name} with similarity ${bestMatch.similarity.toFixed(3)}`);
+    return bestMatch.user;
+  }
+
+  console.log('❌ No matching face found above threshold (0.6)');
+  return null;
+};

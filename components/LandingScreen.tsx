@@ -31,12 +31,18 @@ export function LandingScreen({ onSuccess }: LandingScreenProps) {
   const MAX_SCAN_TIME = 5;
 
   useEffect(() => {
+    console.log('🏗️ LandingScreen component mounting...');
     initializeFaceRecognition();
 
     return () => {
+      console.log('🏗️ LandingScreen component unmounting...');
       cleanup();
     };
   }, []);
+
+  useEffect(() => {
+    console.log('🔄 isLoading state changed:', { isLoading, timestamp: new Date().toISOString() });
+  }, [isLoading]);
 
   const cleanup = () => {
     if (scanIntervalRef.current) {
@@ -54,28 +60,42 @@ export function LandingScreen({ onSuccess }: LandingScreenProps) {
 
   const initializeFaceRecognition = async () => {
     try {
+      console.log('🚀 Initializing face recognition system...');
       setStatus('Loading face recognition models...');
       await loadFaceRecognitionModels();
-
+      console.log('✅ Face recognition models loaded');
+      
       setStatus('Loading registered users...');
       const allUsers = await getAllUsers();
+      console.log('👥 Users loaded from database:', {
+        totalUsers: allUsers.length,
+        usersWithFaceData: allUsers.filter(u => !!u.faceData).length,
+        userDetails: allUsers.map(u => ({ id: u.id, name: u.name, hasFaceData: !!u.faceData }))
+      });
       setUsers(allUsers);
-
-      setStatus('Starting camera...');
-      await startCamera();
-
-      setStatus('Position your face within the oval frame');
+      
+      const cameraStream = await startCamera();
+      setStream(cameraStream);
+      console.log('📷 Camera setup complete');
+      
+      setStatus('Position your face in the oval');
+      console.log('🔄 Setting isLoading to false...');
       setIsLoading(false);
-
+      
+      console.log('🔍 Starting face scanning...');
       startScanning();
     } catch (err: any) {
-      console.error('Initialization error:', err);
+      console.error('🚨 INITIALIZATION ERROR:', {
+        error: err.message,
+        stack: err.stack,
+        timestamp: new Date().toISOString()
+      });
       setError(err.message || 'Failed to initialize face recognition');
       setIsLoading(false);
     }
   };
 
-  const startCamera = async () => {
+  const startCamera = async (): Promise<MediaStream> => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -98,6 +118,7 @@ export function LandingScreen({ onSuccess }: LandingScreenProps) {
       }
 
       setStream(mediaStream);
+      return mediaStream;
     } catch (err: any) {
       console.error('Camera error:', err);
       throw new Error('Unable to access camera. Please grant camera permissions.');
@@ -105,19 +126,26 @@ export function LandingScreen({ onSuccess }: LandingScreenProps) {
   };
 
   const startScanning = () => {
+    console.log('🔧 Setting up scanning intervals...');
+    
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current);
+      console.log('🧹 Cleared previous scan interval');
     }
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
+      console.log('🧹 Cleared previous timer interval');
     }
 
     setScanTime(0);
 
+    console.log('⏰ Setting up timer interval (1 second)...');
     timerIntervalRef.current = setInterval(() => {
       setScanTime(prev => {
         const newTime = prev + 1;
+        console.log(`⏱️ Timer tick: ${newTime}s`);
         if (newTime >= MAX_SCAN_TIME) {
+          console.log('⏰ Timer reached max, triggering auto-registration');
           handleAutoRegistration();
           return newTime;
         }
@@ -125,20 +153,47 @@ export function LandingScreen({ onSuccess }: LandingScreenProps) {
       });
     }, 1000);
 
+    console.log('🔍 Setting up scan interval (1.5 seconds)...');
     scanIntervalRef.current = setInterval(async () => {
+      console.log('📞 Scan interval triggered, calling scanForFace...');
       await scanForFace();
     }, 1500);
+    
+    console.log('✅ Scanning intervals setup complete');
   };
 
   const scanForFace = async () => {
-    if (!videoRef.current || isLoading || showRegistrationForm) return;
+    console.log('🔍 scanForFace called:', {
+      hasVideoRef: !!videoRef.current,
+      isLoading: isLoading,
+      showRegistrationForm: showRegistrationForm,
+      shouldReturn: !videoRef.current || isLoading || showRegistrationForm,
+      timestamp: new Date().toISOString()
+    });
+
+    if (!videoRef.current || isLoading || showRegistrationForm) {
+      console.log('❌ scanForFace blocked by guard clause:', {
+        noVideoRef: !videoRef.current,
+        isLoading: isLoading,
+        showRegistrationForm: showRegistrationForm
+      });
+      return;
+    }
 
     try {
+      console.log('🔍 Starting face scan attempt...', {
+        usersAvailable: users.length,
+        scanTime: scanTime,
+        timestamp: new Date().toISOString()
+      });
+
       if (users.length > 0) {
+        console.log('👥 Available users for recognition:', users.map(u => ({ id: u.id, name: u.name, hasFaceData: !!u.faceData })));
+        
         const recognizedUser = await recognizeFace(videoRef.current, users);
 
         if (recognizedUser) {
-          console.log('Face recognized during login:', {
+          console.log('✅ FACE RECOGNIZED SUCCESSFULLY:', {
             userId: recognizedUser.id,
             userName: recognizedUser.name,
             userEmail: recognizedUser.email,
@@ -150,15 +205,31 @@ export function LandingScreen({ onSuccess }: LandingScreenProps) {
           setTimeout(() => {
             onSuccess(recognizedUser);
           }, 1000);
+        } else {
+          console.log('❌ Face not recognized in this scan attempt', {
+            scanTime: scanTime,
+            timestamp: new Date().toISOString()
+          });
+          setStatus('Scanning... Position your face in the oval');
         }
+      } else {
+        console.log('⚠️ No users available for recognition');
+        setStatus('No registered users found');
       }
     } catch (err: any) {
-      console.error('Scan error:', err);
+      console.error('🚨 SCAN ERROR:', {
+        error: err.message,
+        stack: err.stack,
+        timestamp: new Date().toISOString()
+      });
+      setStatus('Scan error. Retrying...');
     }
   };
 
   const handleAutoRegistration = async () => {
     if (showRegistrationForm || !videoRef.current) return;
+
+    console.log('🚀 Starting auto-registration process after 5 seconds of no recognition...');
 
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current);
@@ -175,28 +246,35 @@ export function LandingScreen({ onSuccess }: LandingScreenProps) {
     try {
       const videoElement = videoRef.current;
       if (!videoElement) {
+        console.log('❌ Camera not available for registration');
         setError('Camera not available. Please try again.');
         setIsProcessing(false);
         return;
       }
 
+      console.log('📷 Detecting face for registration...');
       const detection = await detectSingleFace(videoElement);
       
       if (!detection) {
+        console.log('❌ No face detected during registration attempt');
         setError('No face detected. Please try again.');
         setIsProcessing(false);
         startScanning();
         return;
       }
 
+      console.log('✅ Face detected for registration');
       const descriptor = getFaceDescriptor(detection);
       if (!descriptor) {
+        console.log('❌ Could not extract face descriptor during registration');
         setError('Could not extract face features. Please try again.');
         setIsProcessing(false);
         startScanning();
         return;
       }
+      
       const descriptorString = descriptorToString(descriptor);
+      console.log('🔢 Face descriptor extracted for registration');
       const imageUrl = await captureFaceImage(videoElement);
 
       console.log('Face captured during registration:', {
@@ -311,7 +389,7 @@ export function LandingScreen({ onSuccess }: LandingScreenProps) {
                   <img 
                     src="/face.png" 
                     alt="Face alignment guide" 
-                    className="w-64 h-64 object-contain opacity-80"
+                    className="w-[320px] h-[320px] object-contain opacity-56"
                   />
                 </div>
 

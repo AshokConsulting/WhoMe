@@ -110,60 +110,66 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full">
-        <div className="text-center mb-8">
-          <img src="/logo.png" alt="Logo" className="h-20 w-auto mx-auto mb-4" />
-          <h1 className="text-5xl font-bold text-white mb-4">
-            Welcome to Coffee Shop POS
-          </h1>
-          <p className="text-xl text-blue-100">
-            Position your face in the circle for recognition
-          </p>
-        </div>
+  <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="max-w-3xl w-full">
+      <div className="text-center mb-8">
+        <img src="/logo.png" alt="Logo" className="h-20 w-auto mx-auto mb-4" />
+        <h1 className="text-5xl font-bold text-gray-500 mb-4">
+          Welcome to Face Flow Coffee
+        </h1>
+        <p className="text-xl text-gray-800">
+          Position your face in the circle for recognition
+        </p>
+      </div>
 
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          <div className="relative">
+      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+        {/* VIDEO AREA */}
+        <div className="relative flex justify-center bg-black">
+          <div className="w-full aspect-[9/16] max-w-md">
             <video
               ref={videoRef}
               autoPlay
               playsInline
-              className="w-full"
-              style={{ maxHeight: '500px', objectFit: 'cover' }}
+              className="w-full h-full object-cover"
+              style={{ objectPosition: 'center' }}
             />
-            <canvas ref={canvasRef} className="hidden" />
-            
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="relative">
-                <div className="w-80 h-80 border-4 border-blue-400 rounded-full animate-pulse"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Camera className="w-16 h-16 text-blue-400 opacity-50" />
-                </div>
-              </div>
-            </div>
-
-            {recognizing && (
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-400 text-white px-6 py-3 rounded-full font-bold shadow-lg">
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Recognizing... ({scanAttempts}/{MAX_SCAN_ATTEMPTS})
-                </div>
-              </div>
-            )}
-            
-            {scanAttempts > 5 && scanAttempts < MAX_SCAN_ATTEMPTS && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-orange-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
-                Not recognized? We'll help you register in {MAX_SCAN_ATTEMPTS - scanAttempts} seconds...
-              </div>
-            )}
           </div>
 
-          <div className="p-8 space-y-10">
-            <p className="text-center text-gray-600 mb-6">
-              Center your face in the circle. We'll recognize you automatically!
-            </p>
+          <canvas ref={canvasRef} className="hidden" />
 
-            <Link href="/register">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative">
+              <div className="w-72 h-72 border-4 border-blue-400 rounded-full animate-pulse" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Camera className="w-16 h-16 text-gray-400 opacity-50" />
+              </div>
+            </div>
+          </div>
+
+          {recognizing && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-blue-400 text-white px-6 py-3 rounded-full font-bold shadow-lg">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                Recognizing... ({scanAttempts}/{MAX_SCAN_ATTEMPTS})
+              </div>
+            </div>
+          )}
+
+          {scanAttempts > 5 && scanAttempts < MAX_SCAN_ATTEMPTS && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-orange-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
+              Not recognized? We'll help you register in {MAX_SCAN_ATTEMPTS - scanAttempts} seconds...
+            </div>
+          )}
+        </div>
+
+        {/* TEXT + BUTTONS */}
+        <div className="p-8 space-y-6">
+          <p className="text-center text-gray-600">
+            Center your face in the circle. We'll recognize you automatically!
+          </p>
+
+          <div className="flex flex-col md:flex-row gap-4">
+            <Link href="/register" className="flex-1">
               <button className="w-full bg-blue-600 text-white py-4 px-6 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-3 font-semibold text-lg shadow-lg">
                 <UserPlus className="w-6 h-6" />
                 Register Now
@@ -172,7 +178,7 @@ export default function Home() {
 
             <button
               onClick={handleContinueAsGuest}
-              className="w-full bg-gray-600 text-white py-4 px-6 rounded-xl hover:bg-gray-700 transition-colors flex items-center justify-center gap-3 font-semibold text-lg shadow-lg"
+              className="flex-1 bg-gray-600 text-white py-4 px-6 rounded-xl hover:bg-gray-700 transition-colors flex items-center justify-center gap-3 font-semibold text-lg shadow-lg"
             >
               <Users className="w-6 h-6" />
               Continue as Guest
@@ -181,5 +187,7 @@ export default function Home() {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
 }

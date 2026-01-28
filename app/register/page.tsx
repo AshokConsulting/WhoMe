@@ -254,7 +254,7 @@ function RegisterContent() {
           {step === 'camera' && (
             <div className="space-y-6">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-blue-800 text-sm">
+                <p className="text-gray-800 text-sm">
                   <strong>Instructions:</strong> Position your face in the center of the frame. 
                   Make sure you&apos;re in a well-lit area and looking directly at the camera.
                 </p>

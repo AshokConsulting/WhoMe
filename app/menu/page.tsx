@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getAllMenuItems, MenuItem } from '@/lib/menuService';
 import { getFrequentlyOrderedItems, createOrder, OrderItem } from '@/lib/orderService';
@@ -10,7 +10,7 @@ interface CartItem extends MenuItem {
   quantity: number;
 }
 
-export default function MenuPage() {
+function MenuPageContent() {
   const searchParams = useSearchParams();
   const userId = searchParams.get('userId');
   const userName = searchParams.get('userName');
@@ -176,27 +176,27 @@ export default function MenuPage() {
               <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
             </div>
             <div className="flex items-center gap-4">
-              {!isGuest && userName && (
+             {!isGuest && userName && (
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-lg border border-amber-200">
-                    <User className="w-5 h-5 text-amber-600" />
+                    <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
+                    <User className="w-5 h-5 text-blue-600" />
                     <div className="text-left">
-                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                         <p className="text-sm font-medium text-gray-900">
-                          {userName}
+                            {userName}
                         </p>
                         <button
-                          onClick={handleLogout}
-                          className="text-red-600 hover:text-red-700 font-medium"
+                            onClick={handleLogout}
+                            className="flex items-center justify-center text-blue-600 hover:text-blue-700 font-medium"
                         >
-                          <LogOut className="w-4 h-4" />
+                            <LogOut className="w-4 h-4" />
                         </button>
-                      </div>
-                      <p className="text-xs text-gray-600">Recognized User</p>
+                        </div>
+                        <p className="text-xs text-gray-600">Recognized User</p>
                     </div>
-                  </div>                 
+                    </div>
                 </div>
-              )}
+                )}
             </div>
           </div>
         </div>
@@ -216,7 +216,7 @@ export default function MenuPage() {
                   onClick={() => setSelectedCategory(category.id as any)}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     selectedCategory === category.id
-                      ? 'bg-amber-600 text-white'
+                      ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                   }`}
                 >
@@ -358,7 +358,7 @@ export default function MenuPage() {
               <button
                 onClick={() => setShowCheckoutPopup(true)}
                 disabled={cart.length === 0}
-                className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors"
               >
                 Checkout
               </button>
@@ -371,7 +371,7 @@ export default function MenuPage() {
       {showCheckoutPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-            <div className="bg-amber-600 text-white p-6 rounded-t-xl">
+            <div className="bg-blue-600 text-white p-6 rounded-t-xl">
               <h2 className="text-2xl font-bold text-center">Complete Order</h2>
             </div>
             
@@ -418,7 +418,7 @@ export default function MenuPage() {
                 <button
                   onClick={handleCheckout}
                   disabled={isProcessingOrder}
-                  className="flex-1 bg-amber-600 text-white py-3 rounded-lg font-semibold hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                 >
                   {isProcessingOrder ? 'Processing...' : 'Confirm Order'}
                 </button>
@@ -428,5 +428,20 @@ export default function MenuPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MenuPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Coffee className="w-16 h-16 mx-auto mb-4 text-gray-400 animate-pulse" />
+          <p className="text-xl text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <MenuPageContent />
+    </Suspense>
   );
 }

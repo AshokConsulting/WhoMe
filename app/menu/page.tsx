@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getAllMenuItems, MenuItem } from '@/lib/menuService';
 import { getFrequentlyOrderedItems, createOrder, OrderItem } from '@/lib/orderService';
-import { Plus, Minus, ShoppingCart, Coffee, Cake, Sandwich, Cookie, RotateCcw, X, Check, Trash2, User } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Coffee, Cake, Sandwich, Cookie, RotateCcw, X, Check, Trash2, User, LogOut } from 'lucide-react';
 
 interface CartItem extends MenuItem {
   quantity: number;
@@ -20,12 +20,15 @@ export default function MenuPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [frequentItems, setFrequentItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'coffee' | 'pastry' | 'sandwich' | 'dessert'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'coffee' | 'pastry' | 'sandwich' | 'dessert' | 'past-orders'>(
+    !isGuest && userId ? 'past-orders' : 'all'
+  );
   const [showCheckoutPopup, setShowCheckoutPopup] = useState(false);
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
   const [showPastOrders, setShowPastOrders] = useState(true);
 
   const categories = [
+    { id: 'past-orders', name: 'Past Orders', icon: RotateCcw },
     { id: 'all', name: 'All Items', icon: Coffee },
     { id: 'coffee', name: 'Coffee', icon: Coffee },
     { id: 'pastry', name: 'Pastries', icon: Cake },
@@ -62,6 +65,8 @@ export default function MenuPage() {
 
   const filteredItems = selectedCategory === 'all' 
     ? menuItems 
+    : selectedCategory === 'past-orders'
+    ? frequentItems.map(item => menuItems.find(m => m.id === item.menuItemId)).filter(Boolean) as MenuItem[]
     : menuItems.filter(item => item.category === selectedCategory);
 
   const addToCart = (item: MenuItem) => {
@@ -145,6 +150,11 @@ export default function MenuPage() {
     }
   };
 
+  const handleLogout = () => {
+    // Navigate back to home page for face recognition
+    window.location.href = '/';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -171,68 +181,26 @@ export default function MenuPage() {
                   <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-lg border border-amber-200">
                     <User className="w-5 h-5 text-amber-600" />
                     <div className="text-left">
-                      <p className="text-sm font-medium text-gray-900">
-                        {userName}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-900">
+                          {userName}
+                        </p>
+                        <button
+                          onClick={handleLogout}
+                          className="text-red-600 hover:text-red-700 font-medium"
+                        >
+                          <LogOut className="w-4 h-4" />
+                        </button>
+                      </div>
                       <p className="text-xs text-gray-600">Recognized User</p>
                     </div>
-                  </div>
+                  </div>                 
                 </div>
               )}
             </div>
           </div>
         </div>
       </header>
-
-      {/* Past Orders Banner */}
-      {frequentItems.length > 0 && showPastOrders && !isGuest && (
-        <div className="bg-yellow-50 border-b border-amber-200">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <RotateCcw className="w-5 h-5 text-amber-600" />
-                <div>
-                  <h3 className="font-semibold text-gray-900">Quick Re-order</h3>
-                  <p className="text-sm text-gray-600">Based on your previous orders</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => reorderItems(frequentItems)}
-                  className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 flex items-center gap-2 text-sm font-medium"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Re-order All
-                </button>
-                <button
-                  onClick={() => setShowPastOrders(false)}
-                  className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-6 gap-3 mt-3">
-              {frequentItems.map((item, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    const menuItem = menuItems.find(m => m.id === item.menuItemId);
-                    if (menuItem) addToCart(menuItem);
-                  }}
-                  className="bg-white rounded-lg p-2 shadow hover:shadow-md transition-shadow border border-gray-200"
-                >
-                  {item.imageUrl && (
-                    <img src={item.imageUrl} alt={item.title} className="w-full h-16 object-cover rounded mb-1" />
-                  )}
-                  <div className="text-xs font-semibold text-gray-900 line-clamp-1">{item.title}</div>
-                  <div className="text-xs text-amber-600 font-bold">${item.price.toFixed(2)}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Content */}
       <div className="flex h-[calc(100vh-73px)]">
@@ -260,6 +228,7 @@ export default function MenuPage() {
                       {category.name}
                     </div>
                   )}
+                 
                 </button>
               );
             })}

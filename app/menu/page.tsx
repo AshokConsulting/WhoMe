@@ -162,9 +162,9 @@ export default function MenuPage() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Coffee Shop POS
-            </h1>
+            <div className="flex items-center gap-4">
+              <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
+            </div>
             <div className="flex items-center gap-4">
               {!isGuest && userName && (
                 <div className="flex items-center gap-3">
